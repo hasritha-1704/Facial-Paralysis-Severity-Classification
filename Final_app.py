@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 from torchvision import models
 import numpy as np
-from facenet_pytorch import MTCNN
+from ultralytics import YOLO  # Import YOLOv8
 import os
 
 # Define class names
@@ -21,8 +21,8 @@ data_transforms = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-# Initialize MTCNN for face detection
-mtcnn = MTCNN(keep_all=True, device=device)
+# Load YOLOv8-Face model
+face_detector = YOLO("yolov8n-face.pt")  # Download pretrained YOLOv8-Face
 
 # Load saved models
 def load_saved_models(model_names, model_save_path):
@@ -70,11 +70,11 @@ def ensemble_predict(models, image_tensor):
         predictions += torch.softmax(outputs, dim=1)
     return predictions
 
-# Face detection function
+# Face detection function using YOLOv8-Face
 def is_facial_image(image):
     image_np = np.array(image)
-    boxes, _ = mtcnn.detect(image_np)
-    return boxes is not None
+    results = face_detector(image_np)  # Run YOLOv8-Face detection
+    return len(results[0].boxes) > 0  # Check if at least one face is detected
 
 # Prediction function
 def predict_image(image, models, threshold=0.7):
